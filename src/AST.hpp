@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include "koopa.h"
 
 // CompUnit  ::= FuncDef;
 
@@ -12,6 +13,8 @@
 // Number    ::= INT_CONST;
 
 // CompUnitAST { FuncDefAST { FuncTypeAST { int }, main, BlockAST { StmtAST { 0 } } } }
+
+extern std::string str;
 
 // 所有 AST 的基类
 class BaseAST {
@@ -53,8 +56,10 @@ class FuncDefAST : public BaseAST {
   }
 
   void Output() const override {
-    std::cout << "fun ";
-    std::cout << "@" << ident << "(): ";
+    str += "fun ";
+    str += "@";
+    str += ident;
+    str += "(): ";
     func_type->Output();
     block->Output();
   }
@@ -71,7 +76,8 @@ class FuncTypeAST: public BaseAST {
     }
 
     void Output() const override {
-      std::cout << "i32" << " ";
+      str += "i32";
+      str += " ";
     }
 };
 
@@ -86,10 +92,10 @@ class BlockAST: public BaseAST {
     }
 
     void Output() const override {
-      std::cout << "{\n";
-      std::cout << "\%entry:\n";
+      str += "{\n";
+      str += "\%entry:\n";
       stmt->Output();
-      std::cout << "}";
+      str += "}";
     }
 };
 
@@ -100,12 +106,13 @@ class StmtAST: public BaseAST {
 
     void Dump() const override {
       std::cout << "StmtAST { ";
-      // number->Dump();
       std::cout << number;
       std::cout << " }";
     }
 
     void Output() const override {
-      std::cout << "  ret " << number << "\n";
+      str += " ret ";
+      str += std::to_string(number);
+      str += "\n";
     }
 };
