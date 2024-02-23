@@ -132,16 +132,16 @@ class StmtAST: public BaseAST {
 
 class ExpAST: public BaseAST {
   public:
-    std::unique_ptr<BaseAST> addExp;
+    std::unique_ptr<BaseAST> lOrExp;
 
     void Dump() const override {
       std::cout << "ExpAST { ";
-      addExp->Dump();
+      lOrExp->Dump();
       std::cout << " }";
     }
 
     std::pair<bool, int> Output() const override {
-      std::pair<bool, int> result = addExp->Output();
+      std::pair<bool, int> result = lOrExp->Output();
 
       return result;
     }
@@ -434,3 +434,460 @@ class AddExpWithOpAST : public BaseAST {
 };
 
 
+class RelExpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> addExp;
+
+  void Dump() const override {
+    std::cout << "RelExpAST { ";
+    addExp->Dump();
+    std::cout << " }";
+  }
+
+  std::pair<bool, int> Output() const override{
+    return addExp->Output();
+  }
+
+};
+
+class RelExpWithOpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> relExp;
+  std::string relOp;
+  std::unique_ptr<BaseAST> addExp;
+
+  void Dump() const override{
+    std::cout << "RelExpWithOpAST { ";
+    relExp->Dump();
+    std::cout << "RelExpOpAST { " << relOp << " }";
+    addExp->Dump();
+    std::cout << " }";
+  }
+
+  std::pair<bool, int> Output() const override{
+    std::pair<bool, int> result_l = relExp->Output();
+    int cnt_l = cnt - 1;
+
+    std::pair<bool, int> result_r = addExp->Output();
+    int cnt_r = cnt - 1;
+
+    std::unordered_map<std::string, std::string> dic = {
+      {"<", "lt"},
+      {">", "gt"},
+      {"<=", "le"},
+      {">=", "ge"},
+    };
+
+    if (result_l.first && result_r.first) {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[relOp];
+      str += " ";
+      str += std::to_string(result_l.second);
+      str += ", ";
+      str += std::to_string(result_r.second);
+      str += "\n";
+      cnt++;
+    } else if (result_l.first) {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[relOp];
+      str += " ";
+      str += std::to_string(result_l.second);
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+    } else if (result_r.first) {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[relOp];
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", ";
+      str += std::to_string(result_r.second);
+      str += "\n";
+      cnt++;
+    } else {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[relOp];
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+    }
+
+    return std::pair<bool, int>(false, 0);
+  } 
+
+};
+
+class EqExpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> relExp;
+
+  void Dump() const override{
+    std::cout << "EqExpAST { ";
+    relExp->Dump();
+    std::cout << " }";
+  }
+
+  std::pair<bool, int> Output() const override{
+    return relExp->Output();
+  }
+
+};
+
+class EqExpWithOpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> eqExp;
+  std::string eqOp;
+  std::unique_ptr<BaseAST> relExp;
+
+  void Dump() const override{
+    std::cout << "EqExpWithOpAST { ";
+    eqExp->Dump();
+    std::cout << "EqExpOpAST { " << eqOp << " }";
+    relExp->Dump();
+    std::cout << " }";
+  }
+
+  std::pair<bool, int> Output() const override{
+    std::pair<bool, int> result_l = eqExp->Output();
+    int cnt_l = cnt - 1;
+
+    std::pair<bool, int> result_r = relExp->Output();
+    int cnt_r = cnt - 1;
+
+    std::unordered_map<std::string, std::string> dic = {
+        {"==", "eq"},
+        {"!=", "ne"},
+    };
+
+    if (result_l.first && result_r.first) {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[eqOp];
+      str += " ";
+      str += std::to_string(result_l.second);
+      str += ", ";
+      str += std::to_string(result_r.second);
+      str += "\n";
+      cnt++;
+
+    } else if (result_l.first) {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[eqOp];
+      str += " ";
+      str += std::to_string(result_l.second);
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+
+    } else if (result_r.first) {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[eqOp];
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", ";
+      str += std::to_string(result_r.second);
+      str += "\n";
+      cnt++;
+
+    } else {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += dic[eqOp];
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+    }
+
+    return std::pair<bool, int>(false, 0);
+  }
+};
+
+class LAndExpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> eqExp;
+
+  void Dump() const override{
+    std::cout << "LAndExpAST { ";
+    eqExp->Dump();
+    std::cout << " }";
+  }
+  std::pair<bool, int> Output() const override{
+    return eqExp->Output();
+  }
+};
+
+inline bool filter(int input) {
+  if (input == 0 || input == 1) {
+    return true;
+  }
+
+  str += "  %";
+  str += std::to_string(cnt);
+  str += " = ";
+  str += "ne";
+  str += " ";
+  str += std::to_string(input);
+  str += ", 0\n";
+  cnt++;
+
+  return false;
+}
+
+class LAndExpWithOpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> lAndExp;
+  std::string lAndOp;
+  std::unique_ptr<BaseAST> eqExp;
+
+  void Dump() const override{
+    std::cout << "LAndExpWithOpAST { ";
+    lAndExp->Dump();
+    std::cout << "LAndExpOpAST { " << lAndOp << " }";
+    eqExp->Dump();
+    std::cout << " }";
+  }
+
+  std::pair<bool, int> Output() const override{
+    std::pair<bool, int> result_l = lAndExp->Output();
+    int cnt_l = cnt - 1;
+
+    std::pair<bool, int> result_r = eqExp->Output();
+    int cnt_r = cnt - 1;
+
+    if (result_l.first && result_r.first) {
+      bool sign_l = filter(result_l.second);
+      bool sign_r = filter(result_r.second);
+
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "and";
+      str += " ";
+
+      if (sign_l) {
+        str += std::to_string(result_l.second);
+      } else if (!sign_l && sign_r) {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 2);
+      }
+
+      str += ", ";
+
+      if (sign_r) {
+        str += std::to_string(result_r.second);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      }
+
+      str += "\n";
+      cnt++;
+    } else if (result_l.first) {
+      bool sign_l = filter(result_l.second);
+
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "and";
+      str += " ";
+
+      if (sign_l) {
+        str += std::to_string(result_l.second);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      }
+
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+
+    } else if (result_r.first) {
+      bool sign_r = filter(result_r.second);
+
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "or";
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", ";
+
+      if (sign_r) {
+        str += std::to_string(result_r.second);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      }
+
+      str += "\n";
+      cnt++;
+    } else {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "and";
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+    }
+
+    return std::pair<bool, int>(false, 0);
+  }
+};
+
+class LOrExpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> lAndExp;
+
+  void Dump() const override{
+    std::cout << "LOrExpAST { ";
+    lAndExp->Dump();
+    std::cout << " }";
+  }
+
+  std::pair<bool, int> Output() const override{
+    return lAndExp->Output();
+  }
+
+};
+
+class LOrExpWithOpAST : public BaseAST {
+ public:
+  std::unique_ptr<BaseAST> lOrExp;
+  std::string lOrOp;
+  std::unique_ptr<BaseAST> lAndExp;
+
+  void Dump() const override{
+    std::cout << "LOrExpWithOpAST { ";
+    lOrExp->Dump();
+    std::cout << "LOrExpOpAST { " << lOrOp << " }";
+    lAndExp->Dump();
+    std::cout << " }";
+  }
+  std::pair<bool, int> Output() const override{
+    std::pair<bool, int> result_l = lOrExp->Output();
+    int cnt_l = cnt - 1;
+
+    std::pair<bool, int> result_r = lAndExp->Output();
+    int cnt_r = cnt - 1;
+
+    if (result_l.first && result_r.first) {
+      bool sign_l = filter(result_l.second);
+      bool sign_r = filter(result_r.second);
+
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "or";
+      str += " ";
+
+      if (sign_l) {
+        str += std::to_string(result_l.second);
+      } else if (!sign_l && sign_r) {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 2);
+      }
+
+      str += ", ";
+
+      if (sign_r) {
+        str += std::to_string(result_r.second);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      }
+
+      str += "\n";
+      cnt++;
+
+    } else if (result_l.first) {
+      bool sign_l = filter(result_l.second);
+
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "or";
+      str += " ";
+
+      if (sign_l) {
+        str += std::to_string(result_l.second);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      }
+
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+
+    } else if (result_r.first) {
+      bool sign_r = filter(result_r.second);
+
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "or";
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", ";
+
+      if (sign_r) {
+        str += std::to_string(result_r.second);
+      } else {
+        str += "%";
+        str += std::to_string(cnt - 1);
+      }
+
+      str += "\n";
+      cnt++;
+
+    } else {
+      str += "  %";
+      str += std::to_string(cnt);
+      str += " = ";
+      str += "or";
+      str += " %";
+      str += std::to_string(cnt_l);
+      str += ", %";
+      str += std::to_string(cnt_r);
+      str += "\n";
+      cnt++;
+    }
+
+    return std::pair<bool, int>(false, 0);
+  }
+};
